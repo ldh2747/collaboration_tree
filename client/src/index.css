@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+/* ── AI 아이디어 생성 버튼 ─────────────────────────────── */
+/* 배경: 딥퍼플 → 바이올렛 → 라임그린(ai-500) → 사이언 → 딥퍼플 순환 */
+@keyframes ai-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 버튼 위를 흐르는 빛 띠 */
+@keyframes ai-shimmer {
+  0%   { transform: translateX(-100%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+/* 발광 펄스 */
+@keyframes ai-glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(141,198,63,0.45), 0 0 20px 4px rgba(109,40,217,0.35); }
+  50%       { box-shadow: 0 0 16px 6px rgba(141,198,63,0.65), 0 0 36px 10px rgba(109,40,217,0.5); }
+}
+
+.btn-ai-expand {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    270deg,
+    #1a0533,   /* 딥퍼플 */
+    #6D28D9,   /* 바이올렛 */
+    #8DC63F,   /* 라임그린 (ai-500) */
+    #06B6D4,   /* 사이언 */
+    #6D28D9,
+    #1a0533
+  );
+  background-size: 300% 300%;
+  animation:
+    ai-gradient-shift 4s ease infinite,
+    ai-glow-pulse 2.5s ease-in-out infinite;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  transition: filter 0.2s;
+}
+
+.btn-ai-expand:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.btn-ai-expand:disabled {
+  animation: none;
+  background: #4b5563;
+  box-shadow: none;
+}
+
+/* 빛 띠 레이어 */
+.btn-ai-expand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.35) 50%,
+    transparent 60%
+  );
+  animation: ai-shimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+}

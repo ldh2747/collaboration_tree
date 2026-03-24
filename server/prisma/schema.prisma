@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  ownedMindmaps Mindmap[]      @relation("Owner")
+  collaborators Collaborator[]
+  reactions     Reaction[]
+  createdNodes  Node[]         @relation("NodeCreator")
+}
+
+model Mindmap {
+  id            String         @id @default(cuid())
+  title         String
+  ownerId       String
+  owner         User           @relation("Owner", fields: [ownerId], references: [id])
+  isPublic      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  nodes         Node[]
+  edges         Edge[]
+  collaborators Collaborator[]
+  snapshots     Snapshot[]
+}
+
+model Collaborator {
+  mindmapId String
+  userId    String
+  role      CollaboratorRole @default(VIEWER)
+  mindmap   Mindmap          @relation(fields: [mindmapId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([mindmapId, userId])
+}
+
+enum CollaboratorRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model Node {
+  id            String         @id @default(cuid())
+  mindmapId     String
+  parentId      String?
+  content       String
+  memo          String?
+  positionX     Float          @default(0)
+  positionY     Float          @default(0)
+  style         Json?
+  createdById   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  mindmap       Mindmap        @relation(fields: [mindmapId], references: [id], onDelete: Cascade)
+  createdBy     User           @relation("NodeCreator", fields: [createdById], references: [id])
+  reactions     Reaction[]
+  aiSuggestions AiSuggestion[]
+  sourceEdges   Edge[]         @relation("SourceEdge")
+  targetEdges   Edge[]         @relation("TargetEdge")
+}
+
+model Edge {
+  id           String   @id @default(cuid())
+  mindmapId    String
+  sourceId     String
+  targetId     String
+  sourceHandle String?
+  targetHandle String?
+  label        String?
+  style        Json?
+  mindmap    Mindmap  @relation(fields: [mindmapId], references: [id], onDelete: Cascade)
+  sourceNode Node     @relation("SourceEdge", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetNode Node     @relation("TargetEdge", fields: [targetId], references: [id], onDelete: Cascade)
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  nodeId    String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  node      Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([nodeId, userId])
+}
+
+model AiSuggestion {
+  id        String   @id @default(cuid())
+  nodeId    String
+  prompt    String
+  response  Json
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  node      Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+}
+
+model Snapshot {
+  id        String   @id @default(cuid())
+  mindmapId String
+  yjsState  Bytes
+  createdAt DateTime @default(now())
+  mindmap   Mindmap  @relation(fields: [mindmapId], references: [id], onDelete: Cascade)
+}
