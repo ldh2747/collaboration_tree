@@ -60,7 +60,7 @@ export default function MapPage() {
   return (
     <div className="w-screen h-screen flex flex-col">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4 z-10 shrink-0">
+      <header className="bg-white border-b border-brand-500 px-4 py-2 flex items-center gap-4 z-10 shrink-0">
         <Link to="/dashboard" className="text-brand-500 hover:underline text-sm shrink-0">
           ← 대시보드
         </Link>

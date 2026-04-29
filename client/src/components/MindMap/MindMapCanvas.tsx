@@ -11,7 +11,10 @@ import '@xyflow/react/dist/style.css';
 import CustomNode, { CustomNodeData, ReactionSummary } from './CustomNode';
 import AISidebar from '../AISidebar/AISidebar';
 import RemoteCursors, { RemoteCursor, getUserColor } from './RemoteCursors';
+import ToolbarActions from './ToolbarActions';
 import { YjsMindmapProvider } from '../../lib/yjsProvider';
+import { computeTreeLayout } from '../../lib/layoutUtils';
+import { pruneEdges } from '../../lib/pruneUtils';
 import api from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import { useAuthStore } from '../../store/authStore';
@@ -40,7 +43,14 @@ export default function MindMapCanvas({ mindmapId }: Props) {
   const [loading, setLoading] = useState(true);
   const [cursors, setCursors] = useState<Record<string, RemoteCursor>>({});
 
+  const [toolbarLoading, setToolbarLoading] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [showScores, setShowScores] = useState(false);
+  const [scoreFilter, setScoreFilter] = useState({ high: true, medium: true, low: true });
+  const similarPairsRef = useRef<{ nodeAId: string; nodeBId: string; score: number }[]>([]);
+
   const providerRef = useRef<YjsMindmapProvider | null>(null);
+  const nodesRef = useRef<Node[]>([]);
   const reactionsRef = useRef<Record<string, DbReaction[]>>({});
   const posTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const contentTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -224,6 +234,9 @@ export default function MindMapCanvas({ mindmapId }: Props) {
     };
   }, [mindmapId, token, user?.id]);
 
+  // nodesRef: 항상 최신 nodes를 참조 (handleMerge 등 useCallback 내부에서 사용)
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+
   // 핸들러 최신화 (useCallback 참조 변경 시)
   useEffect(() => {
     setNodes((prev) => prev.map((n) => ({
@@ -256,7 +269,13 @@ export default function MindMapCanvas({ mindmapId }: Props) {
   const onConnect = useCallback((connection: Connection) => {
     const id = crypto.randomUUID();
     setEdges((prev) => addEdge({ ...connection, id }, prev));
-    providerRef.current?.addEdge(id, connection.source!, connection.target!);
+    providerRef.current?.addEdge(
+      id,
+      connection.source!,
+      connection.target!,
+      connection.sourceHandle ?? undefined,
+      connection.targetHandle ?? undefined,
+    );
   }, []);
 
   // ── 노드 추가 (parentId 지정 시 간선 자동 연결) ──────
@@ -276,6 +295,120 @@ export default function MindMapCanvas({ mindmapId }: Props) {
     return id;
   }
 
+  // ── 툴바 핸들러 ───────────────────────────────────────
+
+  const handleLayout = useCallback(() => {
+    const provider = providerRef.current;
+    if (!provider) return;
+    const nodeIds: string[] = [];
+    const edges: { sourceId: string; targetId: string }[] = [];
+    const nodeContents = new Map<string, string>();
+    provider.yNodes.forEach((yNode, id) => {
+      nodeIds.push(id);
+      nodeContents.set(id, (yNode.get('content') as string) ?? '');
+    });
+    provider.yEdges.forEach(yEdge => edges.push({
+      sourceId: yEdge.get('sourceId') as string,
+      targetId: yEdge.get('targetId') as string,
+    }));
+    const positions = computeTreeLayout(nodeIds, edges, nodeContents);
+    provider.applyLayout(positions);
+    setCanUndo(true);
+  }, []);
+
+  const handlePrune = useCallback(() => {
+    const provider = providerRef.current;
+    if (!provider) return;
+    const nodeIds: string[] = [];
+    const edges: { id: string; sourceId: string; targetId: string }[] = [];
+    provider.yNodes.forEach((_, id) => nodeIds.push(id));
+    provider.yEdges.forEach((yEdge, id) => edges.push({
+      id,
+      sourceId: yEdge.get('sourceId') as string,
+      targetId: yEdge.get('targetId') as string,
+    }));
+    const toRemove = pruneEdges(nodeIds, edges);
+    if (toRemove.size === 0) { alert('제거할 간선이 없습니다.'); return; }
+    provider.deleteEdges([...toRemove]);
+    setCanUndo(true);
+    alert(`간선 ${toRemove.size}개를 제거했습니다.`);
+  }, []);
+
+  // nodes + edges를 API에 전송하고 유사도 결과를 반환하는 공통 헬퍼
+  const fetchSimilarity = useCallback(async () => {
+    const provider = providerRef.current;
+    if (!provider) return null;
+    // nodesRef: 400ms 디바운스 전 최신 내용 반영 (Yjs보다 최신)
+    const nodeList = nodesRef.current.map(n => ({
+      id: n.id,
+      content: (n.data as CustomNodeData).label ?? '',
+    }));
+    const edgeList: { sourceId: string; targetId: string }[] = [];
+    provider.yEdges.forEach(yEdge => edgeList.push({
+      sourceId: yEdge.get('sourceId') as string,
+      targetId: yEdge.get('targetId') as string,
+    }));
+    const { data } = await api.post(`/mindmaps/${mindmapId}/find-duplicates`, {
+      nodes: nodeList,
+      edges: edgeList,
+    });
+    return data as {
+      mergePlan: { keep: string; remove: string; score: number }[];
+      similarPairs: { nodeAId: string; nodeBId: string; score: number }[];
+    };
+  }, [mindmapId]);
+
+  const handleMerge = useCallback(async () => {
+    const provider = providerRef.current;
+    if (!provider) return;
+    setToolbarLoading('중복 노드 삭제');
+    try {
+      const result = await fetchSimilarity();
+      if (!result) return;
+      similarPairsRef.current = result.similarPairs;
+      setScoreFilter({ high: true, medium: true, low: true }); // 새 계산 시 필터 초기화
+      if (result.mergePlan.length === 0) { alert('중복 노드가 없습니다.'); return; }
+      provider.applyMergePlan(result.mergePlan);
+      setCanUndo(true);
+      alert(`노드 ${result.mergePlan.length}쌍을 병합했습니다.`);
+    } catch {
+      alert('중복 분석 중 오류가 발생했습니다. 임베딩 서비스를 확인하세요.');
+    } finally {
+      setToolbarLoading(null);
+    }
+  }, [fetchSimilarity]);
+
+  const handleUndo = useCallback(() => {
+    providerRef.current?.undo();
+    setCanUndo(providerRef.current?.canUndo ?? false);
+  }, []);
+
+  // 점수 표시 토글: ON 시 매번 신규 계산 + 필터 초기화, OFF 시 즉시 숨김
+  const handleToggleScores = useCallback(async () => {
+    if (showScores) { setShowScores(false); return; }
+    setToolbarLoading('점수 표시');
+    try {
+      const result = await fetchSimilarity();
+      if (!result) return;
+      similarPairsRef.current = result.similarPairs;
+      setScoreFilter({ high: true, medium: true, low: true });
+      setShowScores(true);
+    } catch {
+      alert('점수 계산 중 오류가 발생했습니다. 임베딩 서비스를 확인하세요.');
+    } finally {
+      setToolbarLoading(null);
+    }
+  }, [showScores, fetchSimilarity]);
+
+  // 필터 토글 핸들러
+  const handleFilterToggle = useCallback((key: 'high' | 'medium' | 'low') => {
+    setScoreFilter(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const handleFilterAll = useCallback((on: boolean) => {
+    setScoreFilter({ high: on, medium: on, low: on });
+  }, []);
+
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => setSelectedNodeId(node.id), []);
   const onPaneClick = useCallback(() => setSelectedNodeId(null), []);
 
@@ -291,6 +424,45 @@ export default function MindMapCanvas({ mindmapId }: Props) {
   }, [mindmapId, user]);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const canShowScores = nodes.length >= 2;
+
+  // 유사도 점수 구간 판별 (높은 연관: ≥0.6, 중간 연관: 0.4~0.6, 낮은 연관: <0.4)
+  function scoreCategory(score: number): 'high' | 'medium' | 'low' {
+    if (score >= 0.6) return 'high';
+    if (score >= 0.4) return 'medium';
+    return 'low';
+  }
+  function scoreColor(score: number): string {
+    if (score >= 0.6) return '#f97316'; // 주황 — 높은 연관 (≥0.85 포함)
+    if (score >= 0.4) return '#eab308'; // 노랑 — 중간 연관
+    return '#22c55e';                   // 초록 — 낮은 연관
+  }
+
+  const allFilterActive = scoreFilter.high && scoreFilter.medium && scoreFilter.low;
+
+  // 유사도 점수 표시: 노드 쌍 간 display-only 오버레이 엣지 (필터 적용)
+  const nodeIdSet = new Set(nodes.map(n => n.id));
+  const scoreOverlayEdges = showScores
+    ? similarPairsRef.current
+        .filter(p =>
+          nodeIdSet.has(p.nodeAId) &&
+          nodeIdSet.has(p.nodeBId) &&
+          scoreFilter[scoreCategory(p.score)]
+        )
+        .map(p => {
+          const color = scoreColor(p.score);
+          return {
+            id: `score-${p.nodeAId}-${p.nodeBId}`,
+            source: p.nodeAId,
+            target: p.nodeBId,
+            label: p.score.toFixed(2),
+            labelStyle: { fontSize: 10, fontWeight: 700, fill: color },
+            style: { stroke: color, strokeWidth: 1.5, strokeDasharray: '4 3' },
+            type: 'straight',
+          };
+        })
+    : [];
+  const displayEdges = [...edges, ...scoreOverlayEdges];
 
   if (loading) return (
     <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">불러오는 중...</div>
@@ -299,9 +471,24 @@ export default function MindMapCanvas({ mindmapId }: Props) {
   return (
     <div className="w-full h-full flex">
       <div className="flex-1 relative" ref={canvasRef} onMouseMove={onMouseMove}>
+        <ToolbarActions
+          onLayout={handleLayout}
+          onPrune={handlePrune}
+          onMerge={handleMerge}
+          onUndo={handleUndo}
+          canUndo={canUndo}
+          loading={toolbarLoading}
+          showScores={showScores}
+          canShowScores={canShowScores}
+          onToggleScores={handleToggleScores}
+          scoreFilter={scoreFilter}
+          allFilterActive={allFilterActive}
+          onFilterToggle={handleFilterToggle}
+          onFilterAll={handleFilterAll}
+        />
         <RemoteCursors cursors={Object.values(cursors)} />
         <ReactFlow
-          nodes={nodes} edges={edges} nodeTypes={nodeTypes}
+          nodes={nodes} edges={displayEdges} nodeTypes={nodeTypes}
           onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
           onConnect={onConnect} onNodeClick={onNodeClick} onPaneClick={onPaneClick}
           fitView deleteKeyCode="Delete"

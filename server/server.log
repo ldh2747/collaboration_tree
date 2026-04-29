@@ -1,0 +1,113 @@
+
+> collaboration-tree-server@1.0.0 dev
+> ts-node-dev --respawn --transpile-only src/index.ts
+
+[INFO] 01:58:29 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.3.3)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Server running on http://localhost:4000
+Socket connected: Y5m3UlF_1qC58fRdAAAB
+Socket disconnected: Y5m3UlF_1qC58fRdAAAB
+Socket connected: CVaPsGrVgvKw-d1AAAAE
+Socket CVaPsGrVgvKw-d1AAAAE joined room cmokav162000110rd0cie3eja
+Socket CVaPsGrVgvKw-d1AAAAE joined room cmokav162000110rd0cie3eja
+[yjsManager] node added to DB: b8411c8c-156f-4e11-a1d9-61dc8aff4679
+[yjsManager] node added to DB: 11ee56b2-ca15-4a7a-b5a3-0dafadbe9328
+[yjsManager] node added to DB: c888bb2a-6c44-472f-ac00-2c6be5f2c2d3
+[yjsManager] edge added to DB: 10e3f465-77ef-4d14-b7ed-d62ab1b9dcb8
+[yjsManager] node added to DB: 12c1dbe9-2b5f-4618-bb50-089ebc670fe9
+[yjsManager] node added to DB: 0fc376d8-2984-441d-97e5-9606252194c7
+[yjsManager] node added to DB: 59127dec-c2d6-410b-b457-496190845953
+[yjsManager] edge added to DB: c627453e-35cd-46b5-ae88-b331358b1956
+[yjsManager] edge added to DB: fbd70ee1-bfe4-4342-a4dc-90359f166cc6
+[yjsManager] edge added to DB: 7011d314-f00d-4792-bc17-6b9cb3b94456
+[yjsManager] edge added to DB: ceade263-5fb1-495e-b9ae-f9c60bfb7f4f
+[yjsManager] node added to DB: 30019eaf-4e90-46f2-aada-c370c7c9de10
+[yjsManager] node added to DB: 1d90994a-5e92-49a2-b5c0-f220cfc674c5
+[yjsManager] node added to DB: 1647ac9a-771a-4b53-89f6-537fe89f2a18
+[yjsManager] edge added to DB: 69ea9a1c-198c-44c8-9c0b-f65bb5b85a77
+[yjsManager] edge added to DB: 666d9a82-6614-4c8c-b27e-415e32b6e0aa
+[yjsManager] edge added to DB: e0dda3b1-5ce8-432a-8aee-5d9a5b864778
+[yjsManager] node added to DB: 044ee33e-c1ee-4515-a35a-5b0fd31c2093
+[yjsManager] node added to DB: 8b961e16-63f6-4e3e-99d7-ebf455b33dcc
+[yjsManager] edge added to DB: 4bf90886-e0fb-433c-bf4c-dd1ef4b1e8a1
+[yjsManager] edge added to DB: 92b3f9e5-8550-4986-8313-fe7b17e8714a
+[yjsManager] node added to DB: b8a6ed1e-658d-4cf2-bbdd-6b499ea3a39c
+[yjsManager] node added to DB: fd43ac57-9d3e-48a3-89c4-c4e2152cac71
+[yjsManager] edge added to DB: b84e3d65-54bd-4b68-8703-490d6b22084e
+[yjsManager] edge added to DB: 15989d07-f71d-47c6-8883-0eeca0340c5b
+[INFO] 02:02:45 Restarting: C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\routes\mindmaps.ts has been modified
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Server running on http://localhost:4000
+Socket connected: kUyJuXT8k-hmdd8xAAAB
+[INFO] 02:05:35 Restarting: C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\routes\mindmaps.ts has been modified
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Server running on http://localhost:4000
+Socket connected: w-uND_bWJ348gltMAAAB
+[INFO] 02:05:44 Restarting: C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\routes\mindmaps.ts has been modified
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Error: listen EADDRINUSE: address already in use :::4000
+    at Server.setupListenHandle [as _listen2] (node:net:1740:16)
+    at listenInCluster (node:net:1788:12)
+    at Server.listen (node:net:1876:7)
+    at Object.<anonymous> (C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\index.ts:42:12)
+    at Module._compile (node:internal/modules/cjs/loader:1254:14)
+    at Module._compile (C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-02096310488638098.js:69:33)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1308:10)
+    at require.extensions..jsx.require.extensions..js (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-02096310488638098.js:114:20)
+    at require.extensions.<computed> (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-02096310488638098.js:71:20)
+[ERROR] 02:05:46 Error: listen EADDRINUSE: address already in use :::4000
+[INFO] 02:09:08 Restarting: C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\routes\mindmaps.ts has been modified
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Server running on http://localhost:4000
+Socket connected: 88tYXERdObsMprHbAAAB
+', '.env'] }
+Server running on http://localhost:4000
+Socket connected: a1GrVMIZlyxQf5rEAAAB
+[INFO] 02:09:08 Restarting: C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\routes\mindmaps.ts has been modified
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Error: listen EADDRINUSE: address already in use :::4000
+    at Server.setupListenHandle [as _listen2] (node:net:1740:16)
+    at listenInCluster (node:net:1788:12)
+    at Server.listen (node:net:1876:7)
+    at Object.<anonymous> (C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\src\index.ts:42:12)
+    at Module._compile (node:internal/modules/cjs/loader:1254:14)
+    at Module._compile (C:\Users\ldh27\Desktop\졸업작품\collaboration_tree\server\node_modules\source-map-support\source-map-support.js:568:25)
+    at Module.m._compile (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-20903240188164096.js:69:33)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1308:10)
+    at require.extensions..jsx.require.extensions..js (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-20903240188164096.js:114:20)
+    at require.extensions.<computed> (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-20903240188164096.js:71:20)
+[ERROR] 02:09:10 Error: listen EADDRINUSE: address already in use :::4000
+.js:69:33)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1308:10)
+    at require.extensions..jsx.require.extensions..js (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-32713317314189627.js:114:20)
+    at require.extensions.<computed> (C:\Users\ldh27\AppData\Local\Temp\ts-node-dev-hook-32713317314189627.js:71:20)
+[ERROR] 02:09:10 Error: listen EADDRINUSE: address already in use :::4000
+
+> collaboration-tree-server@1.0.0 dev
+> ts-node-dev --respawn --transpile-only src/index.ts
+
+[INFO] 02:10:12 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.3.3)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Server running on http://localhost:4000
+Socket connected: HolhoGM_v3gclR5QAAAB
+Socket disconnected: HolhoGM_v3gclR5QAAAB
+Socket connected: 9ROEKhOhLuvxsrxHAAAD
+Socket 9ROEKhOhLuvxsrxHAAAD joined room cmokav162000110rd0cie3eja
+Socket disconnected: 9ROEKhOhLuvxsrxHAAAD
+Socket connected: PuSOj2bc_ogBAqX5AAAG
+Socket PuSOj2bc_ogBAqX5AAAG joined room cmokav162000110rd0cie3eja
+Socket PuSOj2bc_ogBAqX5AAAG joined room cmokav162000110rd0cie3eja
+Socket disconnected: PuSOj2bc_ogBAqX5AAAG
+Socket connected: H97TowwYl85nIxoOAAAI
+Socket H97TowwYl85nIxoOAAAI joined room cmokav162000110rd0cie3eja
+Socket disconnected: H97TowwYl85nIxoOAAAI
+Socket connected: pIsgHOcT-uvHJ8QWAAAL
+Socket pIsgHOcT-uvHJ8QWAAAL joined room cmokav162000110rd0cie3eja
+Socket pIsgHOcT-uvHJ8QWAAAL joined room cmokav162000110rd0cie3eja
+Socket disconnected: pIsgHOcT-uvHJ8QWAAAL
+Socket connected: 4zTLEOwR_N_V8TsfAAAN
+Socket 4zTLEOwR_N_V8TsfAAAN joined room cmokav162000110rd0cie3eja
+Socket disconnected: 4zTLEOwR_N_V8TsfAAAN
+Socket connected: 2bMWYkp_xhcYJ2zjAAAP
+Socket 2bMWYkp_xhcYJ2zjAAAP joined room cmokav162000110rd0cie3eja

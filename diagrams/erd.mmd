@@ -1,0 +1,84 @@
+erDiagram
+    User ||--o{ Mindmap : "소유"
+    User ||--o{ Collaborator : "참여"
+    User ||--o{ Node : "생성"
+    User ||--o{ Reaction : "반응"
+    Mindmap ||--o{ Node : "포함"
+    Mindmap ||--o{ Edge : "포함"
+    Mindmap ||--o{ Collaborator : "협업자"
+    Mindmap ||--o{ Snapshot : "스냅샷"
+    Node ||--o{ Edge : "출발(source)"
+    Node ||--o{ Edge : "도착(target)"
+    Node ||--o{ Reaction : "이모지"
+    Node ||--o{ AiSuggestion : "AI 제안"
+
+    User {
+        string id PK
+        string email UK
+        string passwordHash
+        string displayName
+        string avatarUrl
+        datetime createdAt
+    }
+
+    Mindmap {
+        string id PK
+        string title
+        string ownerId FK
+        boolean isPublic
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Collaborator {
+        string mindmapId PK_FK
+        string userId PK_FK
+        enum role "OWNER|EDITOR|VIEWER"
+    }
+
+    Node {
+        string id PK
+        string mindmapId FK
+        string parentId
+        string content
+        string memo
+        float positionX
+        float positionY
+        string createdById FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Edge {
+        string id PK
+        string mindmapId FK
+        string sourceId FK
+        string targetId FK
+        string sourceHandle
+        string targetHandle
+        string label
+    }
+
+    Reaction {
+        string id PK
+        string nodeId FK
+        string userId FK
+        string emoji
+        datetime createdAt
+    }
+
+    AiSuggestion {
+        string id PK
+        string nodeId FK
+        string prompt
+        json response
+        boolean accepted
+        datetime createdAt
+    }
+
+    Snapshot {
+        string id PK
+        string mindmapId FK
+        bytes yjsState
+        datetime createdAt
+    }

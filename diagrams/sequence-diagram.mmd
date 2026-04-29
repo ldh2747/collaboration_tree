@@ -1,0 +1,69 @@
+sequenceDiagram
+    autonumber
+    actor UserA as 사용자 A (Owner)
+    actor UserB as 사용자 B (Collaborator)
+    participant Client_A as Client A
+    participant Client_B as Client B
+    participant Server as Server (Socket.io)
+    participant YjsMgr as YjsManager
+    participant DB as PostgreSQL
+    participant AI as OpenAI API
+
+    Note over UserA, DB: ── 초기 입장 및 동기화 ──
+
+    UserA->>Client_A: 마인드맵 페이지 접속
+    Client_A->>Server: socket.connect() + join_room
+    Server-->>Client_A: (Socket.io room 입장)
+    Client_A->>Server: yjs_join { mindmapId, token }
+    Server->>YjsMgr: joinRoom(mindmapId)
+    YjsMgr->>DB: Snapshot 조회 or DB 부트스트랩
+    DB-->>YjsMgr: 저장된 상태 반환
+    YjsMgr-->>Server: Y.Doc 반환
+    Server-->>Client_A: yjs_state { 전체 상태 }
+    Client_A-->>UserA: 마인드맵 렌더링
+
+    Note over UserA, DB: ── 노드 추가 및 실시간 협업 ──
+
+    UserB->>Client_B: 마인드맵 페이지 접속
+    Client_B->>Server: socket.connect() + join_room
+    Client_B->>Server: yjs_join { mindmapId, token }
+    Server->>YjsMgr: joinRoom(mindmapId) → 기존 room 반환
+    Server-->>Client_B: yjs_state { 전체 상태 }
+    Client_B-->>UserB: 마인드맵 렌더링 (A의 노드 포함)
+
+    UserA->>Client_A: 노드 추가
+    Client_A->>Client_A: Y.Doc 업데이트 (yNodes.set)
+    Client_A->>Server: yjs_update { update }
+    Server->>YjsMgr: applyRemoteUpdate(mindmapId, update)
+    YjsMgr->>YjsMgr: Y.applyUpdate (origin: remote)
+    YjsMgr->>DB: node.upsert (즉시 저장)
+    Server-->>Client_B: yjs_update broadcast
+    Client_B->>Client_B: Y.applyUpdate → syncFromYjs
+    Client_B-->>UserB: 새 노드 실시간 표시
+
+    Note over UserA, AI: ── AI 아이디어 확장 ──
+
+    UserA->>Client_A: 노드 선택 → 아이디어 확장 버튼 클릭
+    Client_A->>Server: POST /api/ai/expand { nodeContent, parentChain, count }
+    Server->>AI: GPT-4o-mini 요청 (stream: true)
+    AI-->>Server: SSE 청크 스트리밍
+    Server-->>Client_A: SSE data: { text } × N
+    Client_A-->>UserA: 아이디어 실시간 출력
+    AI-->>Server: SSE [DONE]
+    Server-->>Client_A: data: [DONE]
+    UserA->>Client_A: 아이디어 선택 → 전체 추가
+    Client_A->>Client_A: addNode() × N + addEdge() × N
+    Client_A->>Server: yjs_update (노드+엣지 일괄)
+    Server->>YjsMgr: applyRemoteUpdate
+    YjsMgr->>DB: node.upsert × N + edge.upsert × N
+    Server-->>Client_B: yjs_update broadcast
+    Client_B-->>UserB: AI 생성 노드 실시간 표시
+
+    Note over UserA, DB: ── 퇴장 및 저장 ──
+
+    UserA->>Client_A: 페이지 이탈 (대시보드로 이동)
+    Client_A->>Server: yjs_leave { mindmapId }
+    Server->>YjsMgr: leaveRoom(mindmapId)
+    YjsMgr->>DB: syncAllToDb (전체 upsert)
+    YjsMgr->>DB: saveSnapshot (Y.Doc 바이너리 저장)
+    YjsMgr->>YjsMgr: room.doc.destroy()

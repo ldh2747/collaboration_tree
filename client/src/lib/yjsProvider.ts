@@ -8,6 +8,7 @@ export class YjsMindmapProvider {
   private mindmapId: string;
   private socket: Socket;
   private token: string;
+  private undoManager: Y.UndoManager;
 
   // 특정 핸들러 참조 보관 (destroy 시 해당 리스너만 제거)
   private _onYjsState: (data: { mindmapId: string; state: number[] }) => void;
@@ -58,6 +59,12 @@ export class YjsMindmapProvider {
         update: Array.from(update),
       });
     };
+
+    // UndoManager: 로컬 변경(origin=null)만 추적, 원자 단위로 구분
+    this.undoManager = new Y.UndoManager([this.yNodes, this.yEdges], {
+      captureTimeout: 0,
+      trackedOrigins: new Set([null]),
+    });
 
     this._setupSync();
   }
@@ -132,6 +139,64 @@ export class YjsMindmapProvider {
 
   deleteEdge(id: string) {
     this.yEdges.delete(id);
+  }
+
+  // ── Bulk 연산 (단일 트랜잭션 → Undo 1회로 전체 롤백) ──
+
+  applyLayout(positions: Map<string, { x: number; y: number }>) {
+    this.doc.transact(() => {
+      // 노드 위치 갱신
+      positions.forEach(({ x, y }, id) => {
+        const yNode = this.yNodes.get(id);
+        if (yNode) {
+          yNode.set('positionX', x);
+          yNode.set('positionY', y);
+        }
+      });
+      // 좌→우 레이아웃 기준: 모든 간선 핸들 정비 (부모 우측 → 자식 좌측)
+      this.yEdges.forEach(yEdge => {
+        yEdge.set('sourceHandle', 'source-right');
+        yEdge.set('targetHandle', 'target-left');
+      });
+    });
+  }
+
+  deleteEdges(edgeIds: string[]) {
+    this.doc.transact(() => {
+      edgeIds.forEach(id => this.yEdges.delete(id));
+    });
+  }
+
+  applyMergePlan(mergePlan: { keep: string; remove: string }[]) {
+    this.doc.transact(() => {
+      for (const { keep, remove } of mergePlan) {
+        this.yEdges.forEach((yEdge, edgeId) => {
+          const src = yEdge.get('sourceId') as string;
+          const tgt = yEdge.get('targetId') as string;
+          if (src === remove || tgt === remove) {
+            const newSrc = src === remove ? keep : src;
+            const newTgt = tgt === remove ? keep : tgt;
+            if (newSrc === newTgt) {
+              this.yEdges.delete(edgeId); // self-loop 제거
+            } else {
+              yEdge.set('sourceId', newSrc);
+              yEdge.set('targetId', newTgt);
+            }
+          }
+        });
+        this.yNodes.delete(remove);
+      }
+    });
+  }
+
+  // ── Undo ──────────────────────────────────────────────
+
+  undo() {
+    this.undoManager.undo();
+  }
+
+  get canUndo(): boolean {
+    return this.undoManager.undoStack.length > 0;
   }
 
   destroy() {

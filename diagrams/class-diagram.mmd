@@ -1,0 +1,118 @@
+classDiagram
+    direction TB
+
+    class YjsMindmapProvider {
+        +Y.Doc doc
+        +Y.Map yNodes
+        +Y.Map yEdges
+        -Socket socket
+        -string mindmapId
+        -string token
+        +addNode(id, content, x, y, createdById)
+        +updateNodeContent(id, content)
+        +updateNodeMemo(id, memo)
+        +updateNodePosition(id, x, y)
+        +deleteNode(id)
+        +addEdge(id, sourceId, targetId, srcHandle, tgtHandle)
+        +deleteEdge(id)
+        +destroy()
+        -_setupSync()
+        -_onYjsState(data)
+        -_onYjsUpdate(data)
+        -_onDocUpdate(update, origin)
+    }
+
+    class MindMapCanvas {
+        -string mindmapId
+        -Node[] nodes
+        -Edge[] edges
+        -YjsMindmapProvider providerRef
+        -Record reactionsRef
+        +handleLabelChange(id, label)
+        +handleMemoChange(id, memo)
+        +handleDelete(id)
+        +handleReact(nodeId, emoji)
+        +handleAddNode(content, position, parentId)
+        -syncFromYjs(yNodes, yEdges)
+        -makeNodeData(content, reactions, memo)
+        -onNodesChange(changes)
+        -onEdgesChange(changes)
+        -onConnect(connection)
+    }
+
+    class CustomNode {
+        +string id
+        +CustomNodeData data
+        +bool selected
+        -bool editing
+        -bool showMemo
+        -bool showPicker
+        -string analysis
+        +commitEdit()
+        +handleReact(emoji)
+        +handleAnalyze()
+        +handleMemoChange(e)
+    }
+
+    class CustomNodeData {
+        +string label
+        +string memo
+        +ReactionSummary[] reactions
+        +onLabelChange(id, label)
+        +onMemoChange(id, memo)
+        +onDelete(id)
+        +onReact(id, emoji)
+        +bool isAIGenerated
+    }
+
+    class AISidebar {
+        +string mindmapId
+        +Node selectedNode
+        +Node[] nodes
+        +Edge[] edges
+        +onAddNode(content, pos, parentId)
+        -string[] ideas
+        -number count
+        -bool loading
+        +handleExpand()
+        +handleAddIdea(idea)
+    }
+
+    class YjsManager {
+        -Map rooms
+        +joinRoom(mindmapId) Y.Doc
+        +leaveRoom(mindmapId)
+        +applyRemoteUpdate(mindmapId, update) bool
+        +syncAllToDb(mindmapId)
+        +getDoc(mindmapId) Y.Doc
+        -attachDbSync(mindmapId, doc, room)
+        -saveSnapshot(mindmapId)
+        -upsertEdgeWithRetry(...)
+        -scheduleSave(mindmapId, room, fn)
+    }
+
+    class Room {
+        +Y.Doc doc
+        +number clientCount
+        +saveTimer
+    }
+
+    class SocketHandlers {
+        -Set joinedRooms
+        +registerSocketHandlers(io)
+        ~on_join_room(mindmapId, token)
+        ~on_yjs_join(mindmapId, token)
+        ~on_yjs_update(mindmapId, update)
+        ~on_yjs_leave(mindmapId)
+        ~on_reaction(payload)
+        ~on_cursor_move(payload)
+        ~on_disconnect()
+    }
+
+    MindMapCanvas --> YjsMindmapProvider : uses
+    MindMapCanvas --> CustomNode : renders
+    MindMapCanvas --> AISidebar : renders
+    CustomNode --> CustomNodeData : uses
+    YjsManager --> Room : manages
+    SocketHandlers --> YjsManager : calls
+    YjsMindmapProvider ..> SocketHandlers : Socket.io events

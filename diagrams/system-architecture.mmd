@@ -1,0 +1,51 @@
+flowchart TB
+    subgraph CLIENT["🖥️ Client (Browser)"]
+        direction TB
+        RC["React + Vite"]
+        RF["@xyflow/react\n(MindMapCanvas)"]
+        CN["CustomNode\n(노드 컴포넌트)"]
+        AI["AISidebar\n(AI 확장/분석)"]
+        YP["YjsMindmapProvider\n(Yjs Y.Doc)"]
+        ZS["Zustand\n(AuthStore)"]
+        RC --> RF & AI & ZS
+        RF --> CN
+        RF --> YP
+    end
+
+    subgraph SERVER["⚙️ Server (Node.js / Express)"]
+        direction TB
+        subgraph REST["REST API"]
+            R1["/api/auth"]
+            R2["/api/mindmaps"]
+            R3["/api/ai"]
+        end
+        subgraph SOCK["Socket.io"]
+            S1["join_room"]
+            S2["yjs_join / yjs_update"]
+            S3["cursor_move / reaction"]
+        end
+        YM["YjsManager\n(In-Memory Y.Doc Rooms)"]
+        S2 <--> YM
+    end
+
+    subgraph DB["🗄️ PostgreSQL (Prisma ORM)"]
+        T1["User / Mindmap"]
+        T2["Node / Edge"]
+        T3["Reaction / Snapshot"]
+    end
+
+    OPENAI["☁️ OpenAI API\nGPT-4o-mini\n(SSE Streaming)"]
+
+    YP -- "yjs_update\n(WebSocket)" --> S2
+    CN -- "HTTP (axios)" --> REST
+    AI -- "HTTP (axios)" --> R3
+    ZS -- "HTTP (axios)" --> R1
+
+    YM --> DB
+    REST --> DB
+    R3 --> OPENAI
+
+    style CLIENT fill:#e8f4f8,stroke:#2196F3
+    style SERVER fill:#e8f8e8,stroke:#4CAF50
+    style DB fill:#fff3e0,stroke:#FF9800
+    style OPENAI fill:#f3e8ff,stroke:#9C27B0

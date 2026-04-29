@@ -189,7 +189,13 @@ function attachDbSync(mindmapId: string, doc: Y.Doc, room: Room) {
           });
           console.log(`[yjsManager] node added to DB: ${nodeId}`);
         } else if (change.action === 'delete') {
-          await prisma.node.deleteMany({ where: { id: nodeId } });
+          // notIn 방식으로 삭제: add 옵저버의 upsert와 race가 발생해도 안전
+          const yNodeIds = Array.from(yNodes.keys());
+          await prisma.node.deleteMany({
+            where: { mindmapId, id: { notIn: yNodeIds } },
+          });
+          // 스냅샷도 즉시 갱신 (갱신 안 하면 재접속 시 삭제된 노드가 복원됨)
+          await saveSnapshot(mindmapId);
           console.log(`[yjsManager] node deleted from DB: ${nodeId}`);
         }
       } catch (err) {
@@ -239,6 +245,7 @@ function attachDbSync(mindmapId: string, doc: Y.Doc, room: Room) {
           console.log(`[yjsManager] edge added to DB: ${edgeId}`);
         } else if (change.action === 'delete') {
           await prisma.edge.deleteMany({ where: { id: edgeId } });
+          await saveSnapshot(mindmapId);
           console.log(`[yjsManager] edge deleted from DB: ${edgeId}`);
         }
       } catch (err) {

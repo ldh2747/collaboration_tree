@@ -27,13 +27,13 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-brand-600">Collaboration Tree</h1>
+      <header className="bg-brand-500 px-6 py-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-white">Idea Forest</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">{user?.displayName}</span>
+          <span className="text-sm text-white/80">{user?.displayName}</span>
           <button
             onClick={clearAuth}
-            className="text-sm text-gray-500 hover:text-red-500 transition"
+            className="text-sm text-white/70 hover:text-white transition"
           >
             로그아웃
           </button>
@@ -61,7 +61,7 @@ export default function DashboardPage() {
               <Link
                 key={m.id}
                 to={`/map/${m.id}`}
-                className="bg-white rounded-xl shadow p-5 hover:shadow-md transition block group relative"
+                className="bg-white rounded-xl border border-brand-300 p-5 hover:border-brand-500 transition block group relative"
               >
                 <h3 className="font-semibold text-gray-800 truncate pr-6">{m.title}</h3>
                 <p className="text-xs text-gray-400 mt-2">
